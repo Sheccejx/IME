@@ -8,16 +8,6 @@ function locs = ecg_pan_tompkins(ecg, fs)
 %   Signal Processing Toolbox is required. This offline implementation is
 %   not a real-time or clinically validated detector.
 
-    if ~isnumeric(ecg) || ~isreal(ecg) || ~isvector(ecg) || ...
-            isempty(ecg) || any(~isfinite(ecg(:)))
-        error('ecg_pan_tompkins:InvalidSignal', ...
-            'ECG must be a nonempty, real, finite numeric vector.');
-    end
-    if ~isnumeric(fs) || ~isscalar(fs) || ~isreal(fs) || ...
-            ~isfinite(fs) || fs <= 40
-        error('ecg_pan_tompkins:InvalidSampleRate', ...
-            'Sampling rate must be a finite scalar greater than 40 Hz.');
-    end
     x = double(ecg(:));
     fs = double(fs);
     locs = zeros(0, 1);
@@ -31,9 +21,6 @@ function locs = ecg_pan_tompkins(ecg, fs)
     derivative = conv(qrs, [1 2 0 -2 -1] * (fs / 8), 'same');
     width = max(1, round(0.15 * fs));
     envelope = conv(derivative .^ 2, ones(width, 1) / width, 'same');
-    if max(envelope) <= 0
-        return;
-    end
 
     refractory = max(1, round(0.20 * fs));
     [values, positions] = findpeaks(envelope, 'MinPeakDistance', refractory);
