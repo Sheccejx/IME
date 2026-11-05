@@ -11,17 +11,6 @@ function result = ecg_preprocess(ecg, fs)
 %   Signal Processing Toolbox is required. Filtering may alter ECG
 %   morphology, particularly near the beginning and end of a recording.
 
-    if ~isnumeric(ecg) || ~isreal(ecg) || ~isvector(ecg) || ...
-            isempty(ecg) || any(~isfinite(ecg(:)))
-        error('ecg_preprocess:InvalidSignal', ...
-            'ECG must be a nonempty, real, finite numeric vector.');
-    end
-    if ~isnumeric(fs) || ~isreal(fs) || ~isscalar(fs) || ...
-            ~isfinite(fs) || fs <= 100
-        error('ecg_preprocess:InvalidSampleRate', ...
-            'Sampling rate must be a finite scalar greater than 100 Hz.');
-    end
-
     raw = ecg;
     x = double(ecg(:)) - 1.65;
     fs = double(fs);
@@ -38,14 +27,6 @@ function result = ecg_preprocess(ecg, fs)
     % Second-order sections improve numerical stability for the bandpass.
     [z, p, k] = butter(4, [0.5, 40] / (fs / 2), 'bandpass');
     [sos, g] = zp2sos(z, p, k);
-
-    % MATLAB's filtfilt requires a minimum length that depends on the filter.
-    minLength = max(3 * (max(numel(aNotch), numel(bNotch)) - 1), ...
-                    3 * (2 * size(sos, 1)));
-    if numel(x) <= minLength
-        error('ecg_preprocess:SignalTooShort', ...
-            'ECG must contain more than %d samples for zero-phase filtering.', minLength);
-    end
 
     x = filtfilt(bNotch, aNotch, x);
     x = filtfilt(sos, g, x);
